@@ -1,0 +1,15 @@
+{
+  "name": "payshield-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PayShield AI — Autonomous Fraud Intelligence",
+  "scripts": {
+    "start:backend": "cd backend && npm install && npm run dev",
+    "start:ml": "cd ml-engine && pip install -r requirements.txt && python main.py",
+    "start:frontend": "cd frontend && npm install && npm run dev",
+    "start:sim": "cd data-simulator && python stream_generator.py",
+    "blockchain:node": "cd Blockchain && npx hardhat node",
+    "blockchain:deploy": "cd Blockchain && npx hardhat run scripts/deploy.js --network localhost",
+    "init:all": "cd backend && npm install && cd ../frontend && npm install"
+  }
+}

@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-ps-bg:        #0a0d14;
+  --color-ps-surface:   #0d1117;
+  --color-ps-card:      #0d1117;
+  --color-ps-accent:    #38bdf8;
+  --color-ps-accent2:   #22d3ee;
+  --color-ps-blue:      #38bdf8;
+  --color-ps-green:     #22d3ee;
+  --color-ps-greenlt:   #22d3ee;
+  --color-ps-red:       #ef4444;
+  --color-ps-text:      #e2e8f0;
+  --color-ps-muted:     #64748b;
+  --color-ps-outline:   rgba(255,255,255,0.06);
+  --color-ps-ghost:     rgba(255,255,255,0.03);
+  --font-display:       "JetBrains Mono", monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0d14;
+  color: var(--color-ps-text);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a { color: inherit; }
+button, input, select, textarea { font: inherit; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0a0d14; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+
+.glass-nav {
+  background: rgba(10,13,20,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.ps-card {
+  background: linear-gradient(135deg, #0d1117, #0a0f1a);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 12px 26px rgba(0,0,0,0.22);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.ps-card:hover {
+  box-shadow: 0 20px 34px rgba(0,0,0,0.28);
+  transform: translateY(-1px);
+}
+
+.data-number {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.brutalist-card {
+  background: linear-gradient(135deg, #0d1117, #0a0f1a);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: all 150ms ease-out;
+}
+
+.brutalist-card:hover {
+  background: #101827;
+}

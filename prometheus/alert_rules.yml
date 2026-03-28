@@ -1,0 +1,50 @@
+groups:
+  - name: payshield-observability-alerts
+    rules:
+      - alert: MLEngineHighLatency
+        expr: histogram_quantile(0.95, sum(rate(payshield_model_inference_latency_seconds_bucket[30s])) by (le, model_name)) > 2
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "ML engine p95 latency is above 2 seconds"
+
+      - alert: MLEngineDown
+        expr: up{job="payshield-ml-engine"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "ML engine scrape target is down"
+
+      - alert: BackendErrorRateHigh
+        expr: sum(rate(http_request_duration_seconds_count{status=~"5.."}[20s])) / clamp_min(sum(rate(http_request_duration_seconds_count[20s])), 0.001) > 0.05
+        for: 20s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backend 5xx rate is above 5 percent"
+
+      - alert: BlockchainWriteLatencyHigh
+        expr: histogram_quantile(0.95, sum(rate(payshield_blockchain_write_latency_seconds_bucket[30s])) by (le)) > 5
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Blockchain write p95 latency is above 5 seconds"
+
+      - alert: FraudScoreDistributionShift
+        expr: abs(avg_over_time(payshield_fraud_score_histogram_sum[20s]) - avg_over_time(payshield_fraud_score_histogram_sum[1h])) > (2 * stddev_over_time(payshield_fraud_score_histogram_sum[1h]))
+        for: 20s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fraud score mean deviated from 1 hour baseline"
+
+      - alert: EnsembleConfidenceDrop
+        expr: avg_over_time(payshield_model_confidence_score_sum[30s]) / clamp_min(avg_over_time(payshield_model_confidence_score_count[30s]), 0.001) < 0.6
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Mean ensemble confidence dropped below 0.6"

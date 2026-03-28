@@ -1,0 +1,44 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: container_name
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: service_name
+      - target_label: job
+        replacement: docker
+    pipeline_stages:
+      - docker: {}
+      - json:
+          source: output
+          expressions:
+            timestamp: timestamp
+            level: level
+            service: service
+            traceId: traceId
+            spanId: spanId
+            message: message
+      - regex:
+          source: output
+          expression: ".*(?P<derived_level>trace|debug|info|warn|warning|error|fatal).*"
+      - labels:
+          level:
+          derived_level:
+          service:
+          container_name:
+          service_name:

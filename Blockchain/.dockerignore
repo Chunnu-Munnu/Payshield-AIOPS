@@ -1,0 +1,10 @@
+node_modules
+artifacts
+cache
+coverage
+typechain
+deployments
+gas-report.txt
+deployed.json
+.git
+.github

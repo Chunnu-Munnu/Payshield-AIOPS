@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+.git
+data/*.csv
+data/*.jsonl
+runtime_models/log_anomaly_model
+runtime_models/lightweight_log_model.pkl
+runtime_models/lstm_weights.pt

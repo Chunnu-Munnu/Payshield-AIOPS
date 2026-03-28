@@ -1,0 +1,340 @@
+networks:
+  payshield-net:
+    name: payshield-net
+
+volumes:
+  grafana-data:
+  prometheus-data:
+  loki-data:
+  ml-models:
+  ml-data:
+  observability-models:
+  observability-data:
+
+services:
+  payshield-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: payshield-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_BACKEND_URL: http://localhost:3001
+      VITE_WS_URL: ws://localhost:3001
+      VITE_OBSERVABILITY_URL: http://localhost:9000
+      VITE_OBSERVABILITY_WS_URL: ws://localhost:9000/ws/live-feed
+    depends_on:
+      payshield-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:5173').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - payshield-net
+
+  payshield-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: payshield-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      ML_SERVICE_URL: http://payshield-ml-engine:8000
+      REDIS_URL: redis://redis:6379
+      BLOCKCHAIN_RPC_URL: http://payshield-blockchain:8545
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OBSERVABILITY_BRAIN_URL: http://observability-brain:9000
+      OBSERVABILITY_LEDGER_ADDRESS_PATH: /app/blockchain/deployments/observability_address.json
+      ENABLE_DEBUG_ENDPOINTS: "true"
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-alerts@payshield.ai}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-PayShield AI Security}
+      ENABLE_SMTP_ALERTS: ${ENABLE_SMTP_ALERTS:-false}
+      ALERT_EMAIL_COOLDOWN_MS: ${ALERT_EMAIL_COOLDOWN_MS:-180000}
+      DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-demo@payshield.ai}
+      JWT_SECRET: ${JWT_SECRET:-payshield-ps3-secret}
+      PRIVATE_KEY: ${PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+      FRAUD_AUDIT_CONTRACT: ${FRAUD_AUDIT_CONTRACT:-}
+      TX_REGISTRY_CONTRACT: ${TX_REGISTRY_CONTRACT:-}
+      FEDERATED_REGISTRY_CONTRACT: ${FEDERATED_REGISTRY_CONTRACT:-}
+      ALERT_ESCROW_CONTRACT: ${ALERT_ESCROW_CONTRACT:-}
+      IDENTITY_VERIFIER_CONTRACT: ${IDENTITY_VERIFIER_CONTRACT:-}
+      OBSERVABILITY_LEDGER_CONTRACT: ${OBSERVABILITY_LEDGER_CONTRACT:-}
+    volumes:
+      - ./Blockchain:/app/blockchain:ro
+    depends_on:
+      payshield-ml-engine:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      payshield-blockchain:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
+    networks:
+      - payshield-net
+
+  payshield-ml-engine:
+    build:
+      context: ./ml-engine
+      dockerfile: Dockerfile.runtime
+    container_name: payshield-ml-engine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONUNBUFFERED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      ENABLE_DEBUG_ENDPOINTS: "true"
+      ML_ENGINE_BOOTSTRAP_DATA: "false"
+      ML_ENGINE_TRAINING_ROWS: "12000"
+    volumes:
+      - ml-models:/app/saved_models
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status == 200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - payshield-net
+
+  payshield-blockchain:
+    build:
+      context: ./Blockchain
+      dockerfile: Dockerfile
+    container_name: payshield-blockchain
+    restart: unless-stopped
+    ports:
+      - "8545:8545"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:8545',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',method:'eth_blockNumber',params:[],id:1})}).then(r=>r.json()).then(j=>process.exit(j.result?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - payshield-net
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - payshield-net
+
+  payshield-simulator:
+    build:
+      context: ./load-generator
+      dockerfile: Dockerfile
+    container_name: payshield-simulator
+    restart: unless-stopped
+    environment:
+      K6_OUT: ""
+      PAYSHIELD_TARGET: http://payshield-backend:3001
+      K6_RUN_DURATION: 10m
+      K6_CONSTANT_VUS: 1
+      K6_ENABLE_SPIKE: "false"
+      K6_SPIKE_BASE_VUS: 2
+      K6_SPIKE_PEAK_VUS: 6
+      K6_BEC_RATE: 1
+      K6_BEC_TIME_UNIT: 300s
+      K6_TX_SLEEP_SECONDS: 4.5
+    depends_on:
+      payshield-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /scripts/payshield_load.js"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - payshield-net
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      payshield-backend:
+        condition: service_healthy
+      payshield-ml-engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - payshield-net
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command:
+      - "-config.file=/etc/loki/config.yml"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - payshield-net
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: promtail
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/promtail/config.yml"
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - //var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9080/ready > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - payshield-net
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.58.1
+    container_name: jaeger
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:16686 > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - payshield-net
+
+  observability-brain:
+    build:
+      context: ./observability-brain
+      dockerfile: Dockerfile.runtime
+    container_name: observability-brain
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      LOKI_URL: http://loki:3100
+      JAEGER_URL: http://jaeger:16686
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      BACKEND_URL: http://payshield-backend:3001
+      ML_ENGINE_URL: http://payshield-ml-engine:8000
+      BLOCKCHAIN_RPC_URL: http://payshield-blockchain:8545
+      OBSERVABILITY_LEDGER_ADDRESS_PATH: /app/blockchain/deployments/observability_address.json
+      PRIVATE_KEY: ${PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+      ENABLE_DEBUG_ENDPOINTS: "true"
+      OBSERVABILITY_TRAIN_ON_BOOT: "false"
+      OBSERVABILITY_LOG_MODEL: "lightweight"
+    volumes:
+      - ./Blockchain:/app/blockchain:ro
+      - observability-data:/app/data
+      - observability-models:/app/runtime_models
+      - //var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+      payshield-backend:
+        condition: service_healthy
+      payshield-ml-engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:9000/health').status == 200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 600s
+    networks:
+      - payshield-net
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: payshield
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - payshield-net

@@ -1,0 +1,130 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(payshield_model_inference_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p50"},
+        {"expr": "histogram_quantile(0.95, sum(rate(payshield_model_inference_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p95"},
+        {"expr": "histogram_quantile(0.99, sum(rate(payshield_model_inference_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p99"}
+      ],
+      "title": "ML Engine Inference Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "targets": [
+        {"expr": "sum(rate(http_request_duration_seconds_count{status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_request_duration_seconds_count[5m])), 0.001)", "legendFormat": "backend error rate"}
+      ],
+      "title": "Backend HTTP Error Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "id": 3,
+      "targets": [
+        {"expr": "rate(payshield_fraud_score_histogram_bucket[5m])", "legendFormat": "{{le}}"}
+      ],
+      "title": "Fraud Score Distribution",
+      "type": "heatmap"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 4, "x": 8, "y": 8},
+      "id": 4,
+      "targets": [
+        {"expr": "avg(payshield_model_confidence_score_sum) / clamp_min(avg(payshield_model_confidence_score_count),0.001)", "legendFormat": "confidence"}
+      ],
+      "title": "Ensemble Confidence Mean",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 12, "y": 8},
+      "id": 5,
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum(rate(payshield_blockchain_write_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p95"}
+      ],
+      "title": "Blockchain Write Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "id": 6,
+      "targets": [
+        {"expr": "increase(observability_anomalies_total[5m])", "legendFormat": "anomalies"}
+      ],
+      "title": "Anomaly Events per Minute",
+      "type": "barchart"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "id": 7,
+      "targets": [
+        {"expr": "observability_last_root_cause_confidence", "legendFormat": "confidence"}
+      ],
+      "title": "Root Cause Attribution History",
+      "type": "table"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 24},
+      "id": 8,
+      "targets": [
+        {"expr": "observability_last_cycle_duration_ms", "legendFormat": "cycle_ms"}
+      ],
+      "title": "15s SLA Compliance",
+      "type": "gauge"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 16, "x": 8, "y": 24},
+      "id": 9,
+      "targets": [
+        {"expr": "sum by (level) (count_over_time({job=\"docker\"} |= `` [5m]))"}
+      ],
+      "title": "Log Volume by Level",
+      "type": "barchart"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["payshield", "ps3", "observability"],
+  "templating": {"list": []},
+  "time": {"from": "now-15m", "to": "now"},
+  "timezone": "browser",
+  "title": "PayShield Observability",
+  "version": 1,
+  "weekStart": ""
+}

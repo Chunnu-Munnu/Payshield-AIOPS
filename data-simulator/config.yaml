@@ -1,0 +1,5 @@
+base_url: http://localhost:3001/api/transactions/submit
+batch_size: 1
+interval_ms: 3000
+fraud_injection_rate: 0.0
+base_tx_per_second: 1

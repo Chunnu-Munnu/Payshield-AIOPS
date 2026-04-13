@@ -1,214 +1,186 @@
-<!--
-FILE: README.md
-ROLE: Project overview and complete local runbook for PayShield AI
-INSPIRED BY: Production fintech architecture docs and hackathon demo playbooks
-PERFORMANCE TARGET: Full local stack up and demo-ready in under 20 minutes
--->
+# PayShield AI 🛡️
+### Real-Time Fraud Intelligence Platform for Digital Payments
 
-# PayShield AI
-## Real-Time Fraud Intelligence Platform for Digital Payments
+PayShield AI is a modular, production-grade fraud detection platform built for modern digital payment ecosystems. It combines machine learning, behavioral analytics, and graph-based intelligence to generate explainable, real-time fraud risk scores — designed with scalability, resilience, and extensibility in mind.
 
-PayShield AI is a real-time fraud detection and risk intelligence system designed for modern digital payment ecosystems. It combines machine learning, behavioral analytics, graph-based risk detection, and communication analysis to identify fraudulent activity and provide explainable decisions.
+---
 
-## 🚀 Overview
+## Why PayShield AI?
 
-PayShield AI monitors transactions, user behavior, emails, and SMS signals to generate a comprehensive fraud risk score in real time.
+Digital payment systems face increasingly sophisticated threats — account takeovers, transaction laundering, fraud rings, and social engineering attacks. PayShield AI addresses these with a multi-layered intelligence pipeline that works in real time, at scale, without sacrificing explainability.
 
-It is built to emulate a production-grade fintech security system with:
+---
 
-- Multi-model AI ensemble
-- Live data ingestion (transactions, Gmail, SMS)
-- Explainable AI outputs
-- Tamper-resistant audit logging
+## Features ✨
 
-## 🧠 Key Features
+- **Real-Time Risk Scoring** — Ensemble ML models evaluate every transaction instantly
+- **Behavioral Intelligence** — Detect unusual user patterns and temporal anomalies
+- **Graph-Based Detection** — Identify fraud rings and shared entities via network analysis
+- **BEC Detection (NLP)** — Analyze emails for Business Email Compromise signals
+- **SMS Fraud Signals** — Parse and score incoming bank SMS alerts
+- **Blockchain Audit Logging** — High-risk events logged to a tamper-resistant ledger
+- **Fault-Tolerant Architecture** — Fallback scoring keeps the system running if ML services go down
 
-### 1. Real-Time Risk Scoring
-- Multi-model ensemble evaluates every transaction
-- Combines anomaly detection, behavioral signals, and AML patterns
+---
 
-### 2. Explainable AI
-- Human-readable reasoning behind every fraud decision
-- Feature-level contribution (SHAP-style interpretation)
+## Architecture
+Frontend (React + Vite)
+↓
+Backend API (Node.js + Express)
+├── ML Engine     (FastAPI / Python)
+├── Email Monitor (IMAP)
+├── SMS Ingestion (HTTP)
+└── Blockchain    (Hardhat / Ethereum)
 
-### 3. Email Fraud Detection (BEC)
-- Detects Business Email Compromise patterns
-- Flags urgency, account-change requests, and suspicious instruction tone
+A loosely coupled, microservices-inspired design — each component is independently deployable and replaceable.
 
-### 4. SMS-Based Fraud Signals
-- Parses Indian bank SMS alerts
-- Extracts transaction details and evaluates risk
+---
 
-### 5. Fraud Graph Detection
-- Identifies fraud rings using shared entities
-- Detects suspicious transaction networks in real time
+## ML Pipeline 🤖
 
-### 6. Blockchain Audit Logging
-- High-risk events stored on a local blockchain
-- Ensures tamper-proof audit trails
+PayShield AI uses a hybrid ensemble combining supervised, unsupervised, and graph-based models:
 
-### 7. Fault-Tolerant Pipeline
-- Backend continues operating even if ML service is down
-- Uses resilient fallback scoring logic
+| Model | Role |
+|---|---|
+| Graph Neural Network | Detect fraud rings and entity relationships |
+| BiLSTM + Attention | Capture temporal transaction patterns |
+| XGBoost | Structured tabular classification |
+| LightGBM | Efficient gradient-boosted scoring |
+| Isolation Forest | Unsupervised anomaly detection |
+| NLP Classifier | Flag suspicious financial communications |
 
-## 🏗️ System Architecture
+**Fraud patterns detected:** Smurfing, layering, circular transactions, fan-out behavior
 
-```text
-Frontend Dashboard  →  Backend API (Node.js)
-                           ↓
-        ┌──────────────┬──────────────┬──────────────┬──────────────┐
-        ↓              ↓              ↓              ↓
-   ML Engine      Gmail Monitor   SMS Ingestion   Blockchain
-  (FastAPI)         (IMAP)         (HTTP)         (Hardhat)
-```
+---
 
-## 🤖 AI Models Used
-
-The platform uses a 6-model ensemble system:
-
-### 1. Graph Neural Network (GNN)
-- Detects fraud rings and shared entity relationships
-
-### 2. Sequence Model (BiLSTM + Attention)
-- Captures temporal fraud patterns (including warmup-to-drain behavior)
-
-### 3. Tabular Models (XGBoost + LightGBM + Isolation Forest)
-- Handles structured transaction data and anomaly detection
-
-### 4. Behavioral Biometrics
-- Evaluates user session trust patterns
-
-### 5. BEC NLP Detector
-- Identifies suspicious payment-instruction language in emails/memos
-
-### 6. AML Pattern Engine
-- Detects:
-  - Smurfing
-  - Layering
-  - Circular transactions
-  - Fan-out behavior
-
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | Frontend | React + Vite |
 | Backend | Node.js + Express |
 | ML Engine | Python + FastAPI |
-| Blockchain | Hardhat (Ethereum local node) |
-| Data Stream | Python |
-| Realtime | WebSockets |
+| Blockchain | Hardhat (local Ethereum node) |
+| Real-Time Comms | WebSockets |
+| Data Simulation | Python |
 
-## ⚙️ Local Setup
+---
 
-Run each service in a separate terminal.
+## Getting Started 🚀
 
-### 1. Blockchain Node
-```powershell
-cd "D:\Amogh Projects\PAYSHIELD-AI\Blockchain"
+### Prerequisites
+
+- Node.js >= 18
+- Python >= 3.10
+- npm or yarn
+- Git
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/<your-username>/payshield-ai.git
+cd payshield-ai
+```
+
+### 2. Start the Blockchain Node
+
+```bash
+cd Blockchain
 npx hardhat node
 ```
 
-### 2. Deploy Smart Contracts
-```powershell
-cd "D:\Amogh Projects\PAYSHIELD-AI\Blockchain"
+### 3. Deploy Smart Contracts
+
+```bash
 npx hardhat compile
 npx hardhat run scripts/deploy.js --network localhost
 ```
 
-### 3. ML Engine
-```powershell
-cd "D:\Amogh Projects\PAYSHIELD-AI\ml-engine"
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+### 4. Start the ML Engine
+
+```bash
+cd ml-engine
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --port 8000
 ```
 
-Health check:
-```powershell
-curl http://localhost:8000/health
-```
+### 5. Start the Backend
 
-### 4. Backend Server
-```powershell
-cd "D:\Amogh Projects\PAYSHIELD-AI\backend"
+```bash
+cd backend
 npm install
 node src/server.js
 ```
 
-Health check:
-```powershell
-curl http://localhost:3001/health
-```
+### 6. Start the Frontend
 
-### 5. Frontend
-```powershell
-cd "D:\Amogh Projects\PAYSHIELD-AI\frontend"
+```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-Open:
+Visit: [http://localhost:5173](http://localhost:5173)
 
-- `http://localhost:5173`
+---
 
-### 6. (Optional) Data Stream Preload
-```powershell
-cd "D:\Amogh Projects\PAYSHIELD-AI\data-simulator"
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python stream_generator.py --stop-after 200
-```
+## API Reference
 
-## 📡 API Endpoints
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/transactions/submit` | Submit a transaction for fraud scoring |
+| `GET` | `/api/transactions/history` | Retrieve transaction history |
+| `POST` | `/api/email/test-bec` | Analyze an email for BEC signals |
+| `POST` | `/api/sms/incoming` | Process an incoming SMS alert |
+| `GET` | `/health` | Service health check |
 
-| Method | Endpoint |
-|---|---|
-| POST | `/api/transactions/submit` |
-| GET | `/api/transactions/history` |
-| POST | `/api/email/test-bec` |
-| GET | `/api/email/status` |
-| POST | `/api/sms/incoming` |
-| POST | `/api/sms/test` |
-| GET | `/health` |
+---
 
-## 📱 SMS Forwarder Setup (Android)
+## Design Principles
 
-Configure your SMS forwarder app:
+- **Explainability First** — Risk scores are transparent and interpretable, not black boxes
+- **Resilience** — The system degrades gracefully under partial failure
+- **Modularity** — Components are independently replaceable and scalable
+- **Security-Conscious** — No credentials or sensitive data in the codebase
 
-- Method: `HTTP POST`
-- URL: `http://<YOUR-IP>:3001/api/sms/incoming`
-- Sender Filters: `HDFCBK`, `ICICIB`, `SBIPSG`, `AXISBK`, `KOTAKB`
+---
 
-## 🧪 Demo Usage
+## Security
 
-- Submit transactions from the frontend PaymentForm
-- Send test emails for BEC detection
-- Trigger SMS test endpoint
-- Observe:
-  - Risk scores
-  - Model breakdown
-  - Alerts
-  - Blockchain logs
+- Use environment variables for all secrets and API keys
+- Never commit `.env` files to version control
+- Do not use real financial or personal data in development or testing
 
-## 🔒 Security Notes
+---
 
-- Never commit `.env` files
-- Do not store real credentials in the repo
-- Use environment variables for all secrets
+## Contributing 🤝
 
-## 📌 Notes
+Contributions are welcome across all areas:
 
-- Designed as a real-time fintech fraud intelligence system for hackathon demonstration and technical evaluation
-- Focused on modularity, explainability, and scalability
-- Can be extended with:
-  - Real banking APIs
-  - Cloud deployment
-  - Production-grade data pipelines
+- Machine learning improvements and experimentation
+- Backend API design and optimization
+- Frontend visualization and UX enhancements
+- Fraud detection research and feature engineering
 
+**Good first issues:**
+- Improve model explainability outputs
+- Add new fraud detection heuristics
+- Enhance API validation and error handling
+- Optimize real-time processing performance
 
+---
 
+## Roadmap 🗺️
+
+- [ ] Cloud-native deployment (Docker + Kubernetes)
+- [ ] Integration with real-world financial APIs
+- [ ] Advanced explainability dashboards
+- [ ] Event-driven streaming architecture (Kafka)
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

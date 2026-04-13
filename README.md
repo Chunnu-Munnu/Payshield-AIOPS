@@ -210,8 +210,5 @@ Configure your SMS forwarder app:
   - Cloud deployment
   - Production-grade data pipelines
 
-## 👨‍💻 Project Owner
 
-**Amogh Sharma**  
-Submitted to **JP Morgan** via **PES University**.
 
